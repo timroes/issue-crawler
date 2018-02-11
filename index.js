@@ -34,7 +34,6 @@ function convertIssue(owner, repo, raw) {
 	const time_to_fix = (raw.created_at && raw.closed_at) ?
 			moment(raw.closed_at).diff(moment(raw.created_at)) :
 			null;
-			console.log(raw);
 	return {
 		id: raw.id,
 		owner: owner,
