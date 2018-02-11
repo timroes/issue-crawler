@@ -1,0 +1,134 @@
+{
+  "index_patterns": ["issues-*"],
+  "settings": {
+    "number_of_shards": 1
+  },
+  "mappings": {
+    "doc": {
+      "properties": {
+        "id": {
+          "type": "keyword"
+        },
+        "state": {
+          "type": "keyword"
+        },
+        "title": {
+          "type": "text",
+          "fields": {
+            "keyword": {
+              "type": "keyword"
+            }
+          }
+        },
+        "number": {
+          "type": "long"
+        },
+        "url": {
+          "type": "keyword"
+        },
+        "locked": {
+          "type": "boolean"
+        },
+        "comments": {
+          "type": "long"
+        },
+        "author_association": {
+          "type": "keyword"
+        },
+        "user": {
+          "type": "keyword"
+        },
+        "body": {
+          "type": "text",
+          "fields": {
+            "keyword": {
+              "type": "keyword"
+            }
+          }
+        },
+        "labels": {
+          "type": "keyword"
+        },
+        "is_pullrequest": {
+          "type": "boolean"
+        },
+        "time_to_fix": {
+          "type": "long"
+        },
+        "created_at": {
+          "properties": {
+            "time": {
+              "type": "date"
+            },
+            "hour_of_day": {
+              "type": "integer"
+            },
+            "weekday": {
+              "type": "keyword"
+            },
+            "weekday_number": {
+              "type": "integer"
+            }
+          }
+        },
+        "updated_at": {
+          "properties": {
+            "time": {
+              "type": "date"
+            },
+            "hour_of_day": {
+              "type": "integer"
+            },
+            "weekday": {
+              "type": "keyword"
+            },
+            "weekday_number": {
+              "type": "integer"
+            }
+          }
+        },
+        "closed_at": {
+          "properties": {
+            "time": {
+              "type": "date"
+            },
+            "hour_of_day": {
+              "type": "integer"
+            },
+            "weekday": {
+              "type": "keyword"
+            },
+            "weekday_number": {
+              "type": "integer"
+            }
+          }
+        },
+        "reactions": {
+          "properties": {
+            "total": {
+              "type": "integer"
+            },
+            "upVote": {
+              "type": "integer"
+            },
+            "downVote": {
+              "type": "integer"
+            },
+            "laugh": {
+              "type": "integer"
+            },
+            "hooray": {
+              "type": "integer"
+            },
+            "confused": {
+              "type": "integer"
+            },
+            "heart": {
+              "type": "integer"
+            }
+          }
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,17 @@
+{
+  "name": "issue-crawler",
+  "version": "0.1.0",
+  "description": "Crawls GitHub issues and index them into an Elasticsearch instance",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Tim Roes <mail@timroes.de>",
+  "license": "Apache-2.0",
+  "dependencies": {
+    "@octokit/rest": "^14.0.9",
+    "elasticsearch": "^14.1.0",
+    "moment": "^2.20.1"
+  }
+}
