@@ -49,6 +49,9 @@
         "labels": {
           "type": "keyword"
         },
+        "assignees": {
+          "type": "keyword"
+        },
         "is_pullrequest": {
           "type": "boolean"
         },
