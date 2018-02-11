@@ -9,6 +9,12 @@
         "id": {
           "type": "keyword"
         },
+        "owner": {
+          "type": "keyword"
+        },
+        "repo": {
+          "type": "keyword"
+        },
         "state": {
           "type": "keyword"
         },

@@ -30,12 +30,15 @@ function enhanceDate(date) {
  * Takes in the raw issue from the GitHub API response and must return the
  * object that should be stored inside Elasticsearch.
  */
-function convertIssue(raw) {
+function convertIssue(owner, repo, raw) {
 	const time_to_fix = (raw.created_at && raw.closed_at) ?
 			moment(raw.closed_at).diff(moment(raw.created_at)) :
 			null;
+			console.log(raw);
 	return {
 		id: raw.id,
+		owner: owner,
+		repo: repo,
 		state: raw.state,
 		title: raw.title,
 		number: raw.number,
@@ -95,7 +98,7 @@ function getCacheKeyUpdate(owner, repo, page, key) {
 async function processGitHubIssues(owner, repo, response, page) {
 	console.log(`Found ${response.data.length} issues`);
 	if (response.data.length > 0) {
-		const issues = response.data.map(convertIssue);
+		const issues = response.data.map(issue => convertIssue(owner, repo, issue));
 		const bulkIssues = getIssueBulkUpdates(`issues-${owner}-${repo}`, issues);
 		const updateCacheKey = getCacheKeyUpdate(owner, repo, page, response.meta.etag);
 		const body = [...bulkIssues, ...updateCacheKey];
