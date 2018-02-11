@@ -50,7 +50,7 @@ function convertIssue(raw) {
 		body: raw.body,
 		labels: raw.labels.map(label => label.name),
 		is_pullrequest: !!raw.pull_request,
-		assignees: !assignees ? null : assignees.map(a => a.login),
+		assignees: !raw.assignees ? null : raw.assignees.map(a => a.login),
 		reactions: !raw.reactions ? null : {
 			total: raw.reactions.total_count,
 			upVote: raw.reactions['+1'],
