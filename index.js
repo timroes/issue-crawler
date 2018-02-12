@@ -114,6 +114,7 @@ async function loadCacheForRepo(owner, repo) {
 	const entries = await client.search({
 		index: CACHE_INDEX,
 		_source: ['page', 'key'],
+		size: 10000,
 		body: {
 			query: {
 				bool: {
