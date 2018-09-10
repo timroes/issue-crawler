@@ -8,10 +8,7 @@ if (!process.env.GITHUB_OAUTH_TOKEN || !process.env.ES_HOST || !process.env.ES_A
 	throw new Error('You need to specify GITHUB_OAUTH_TOKEN, ES_HOST and ES_AUTH env variables.');
 }
 
-const githubAuth = {
-	type: 'oauth',
-	token: process.env.GITHUB_OAUTH_TOKEN
-};
+const githubToken = process.env.GITHUB_OAUTH_TOKEN;
 
 const elasticsearch = {
 	host: process.env.ES_HOST,
@@ -20,6 +17,6 @@ const elasticsearch = {
 
 module.exports = {
 	elasticsearch,
-	githubAuth,
+	githubToken,
 	repos
 };

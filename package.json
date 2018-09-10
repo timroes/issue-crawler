@@ -10,8 +10,8 @@
   "author": "Tim Roes <mail@timroes.de>",
   "license": "Apache-2.0",
   "dependencies": {
-    "@octokit/rest": "^14.0.9",
     "elasticsearch": "^14.1.0",
+    "graphql-request": "^1.8.2",
     "moment": "^2.20.1"
   }
 }

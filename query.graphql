@@ -1,0 +1,117 @@
+query getIssues($query: String!, $cursor: String) {
+  rateLimit {
+    cost
+    limit
+    remaining
+  }
+  issues: search(query: $query, type: ISSUE, first: 100, after: $cursor) {
+    pageInfo {
+      hasNextPage
+      endCursor
+    }
+    edges {
+      issue: node {
+        ... on Issue {
+          id
+          state
+          number
+          title
+          url
+          locked
+          comments {
+            totalCount
+          }
+          createdAt
+          updatedAt
+          closedAt
+          authorAssociation
+          author {
+            login
+          }
+          body
+          labels(first: 100) {
+            edges {
+              label: node {
+                name
+              }
+            }
+          }
+          assignees(first: 100) {
+            edges {
+              assignee: node {
+                login
+              }
+            }
+          }
+          reactionCount: reactions {
+            totalCount
+          }
+          reactions: reactionGroups {
+            content
+            users { totalCount }
+          }
+        }
+        ... on PullRequest {
+          id
+          prState: state
+          pr: number
+          number
+          title
+          url
+          locked
+          comments {
+            totalCount
+          }
+          createdAt
+          updatedAt
+          closedAt
+          authorAssociation
+          author {
+            login
+          }
+          body
+          labels(first: 100) {
+            edges {
+              label: node {
+                name
+              }
+            }
+          }
+          assignees(first: 100) {
+            edges {
+              assignee: node {
+                login
+              }
+            }
+          }
+          reactionCount: reactions {
+            totalCount
+          }
+          reactions: reactionGroups {
+            content
+            users { totalCount }
+          }
+          reviews(last: 100) {
+            edges {
+              review: node {
+                author {
+                  login
+                }
+              }
+            }
+          }
+          additions
+          deletions
+          changedFiles
+          commits {
+            totalCount
+          }
+          merged
+          mergedBy {
+            login
+          }
+        }
+      }
+    }
+  }
+}
