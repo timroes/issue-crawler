@@ -113,34 +113,39 @@ function getIssueBulkUpdates(index, issues) {
 async function processGitHubIssues(owner, repo, response) {
   const issues = response.issues.edges.map(({ issue }) => convertIssue(owner, repo, issue));
   const bulkIssues = getIssueBulkUpdates(`issues-${owner}-${repo}`, issues);
-  console.log('Writing issues to Elasticsearch');
+  console.log('│ │ Writing issues to Elasticsearch');
   await client.bulk({ body: bulkIssues });
-  console.log('Finished writing issues to Elasticsearch');
+  console.log('│ │ Finished writing issues to Elasticsearch');
 }
 
 async function processRepos() {
   for (const repository of config.repos) {
-    console.log(`Processing repository ${repository}`);
+    console.log(`╒════════════════════════════════════`);
+    console.log(`│ Processing repository ${repository}`);
   	const [ owner, repo ] = repository.split('/');
     let cursor = null;
     let hasNextPage = true;
     while (hasNextPage) {
-      console.log(`Process page for cursor: ${cursor}`);
+      console.log(`│ ┌─────`)
+      console.log(`│ │ Request page for cursor: ${cursor}`);
 
       const { data, headers } = await graphqlClient.rawRequest(query, {
         query: `repo:"${repository}"`,
         cursor: cursor,
       });
 
-      console.log(`X-GitHub-Request-Id: ${headers.get('x-github-request-id')}`);
+      console.log(`│ │ X-GitHub-Request-Id: ${headers.get('x-github-request-id')}`);
 
       const { cost, remaining, limit } = data.rateLimit;
-      console.log(`Rate limit: ${remaining}/${limit} (Cost: ${cost})`);
+      console.log(`│ │ Rate limit: ${remaining}/${limit} (Cost: ${cost})`);
       await processGitHubIssues(owner, repo, data);
       cursor = data.issues.pageInfo.endCursor;
       hasNextPage = data.issues.pageInfo.hasNextPage;
+      console.log(`│ │ hasNextPage: ${hasNextPage}`);
+      console.log(`│ └─────`);
     }
-    console.log(`Finished processing ${repository}`);
+    console.log(`│ │ Finished processing ${repository}`);
+    console.log(`╘════════════════════════════════════`);
   }
 }
 
