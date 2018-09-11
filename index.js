@@ -127,16 +127,18 @@ async function processRepos() {
     while (hasNextPage) {
       console.log(`Process page for cursor: ${cursor}`);
 
-      const response = await graphqlClient.request(query, {
+      const { data, headers } = await graphqlClient.rawRequest(query, {
         query: `repo:"${repository}"`,
         cursor: cursor,
       });
 
-      const { cost, remaining, limit } = response.rateLimit;
+      console.log(`X-GitHub-Request-Id: ${headers.get('x-github-request-id')}`);
+
+      const { cost, remaining, limit } = data.rateLimit;
       console.log(`Rate limit: ${remaining}/${limit} (Cost: ${cost})`);
-      await processGitHubIssues(owner, repo, response);
-      cursor = response.issues.pageInfo.endCursor;
-      hasNextPage = response.issues.pageInfo.hasNextPage;
+      await processGitHubIssues(owner, repo, data);
+      cursor = data.issues.pageInfo.endCursor;
+      hasNextPage = data.issues.pageInfo.hasNextPage;
     }
     console.log(`Finished processing ${repository}`);
   }
