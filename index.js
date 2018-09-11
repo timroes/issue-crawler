@@ -144,7 +144,7 @@ async function processRepos() {
       console.log(`│ │ hasNextPage: ${hasNextPage}`);
       console.log(`│ └─────`);
     }
-    console.log(`│ │ Finished processing ${repository}`);
+    console.log(`│ Finished processing ${repository}`);
     console.log(`╘════════════════════════════════════`);
   }
 }
