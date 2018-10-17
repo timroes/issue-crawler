@@ -1,6 +1,5 @@
 const repos = [
 	'elastic/kibana',
-	'elastic/kibana-canvas',
 	'elastic/eui',
 ];
 
