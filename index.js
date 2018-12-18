@@ -137,7 +137,10 @@ async function loadCacheForRepo(owner, repo) {
 	}, {});
 }
 
-config.repos.forEach(async (repository) => {
+const requestErrorIds = [];
+let errorCount = 0;
+
+await Promise.all(config.repos.map(async (repository) => {
 	console.log(`Processing repository ${repository}`);
 	const [ owner, repo ] = repository.split('/');
 
@@ -172,8 +175,21 @@ config.repos.forEach(async (repository) => {
 				console.log('Page was not modified. Continue with next page.');
 				continue;
 			} else {
-				throw error;
+				// Since the GitHub API seem to fail very often, we just log out failures,
+				// but continue with the next page.
+				if (error.headers && error.headers['x-github-request-id']) {
+					requestErrorIds.push(error.headers['x-github-request-id']);
+				}
+				errorCount++;
 			}
 		}
 	}
-});
+}));
+
+if (errorCount > 0) {
+	console.log('------ ERROR REPORT -------');
+	console.log(`Failed requests: ${errorCount}`);
+	console.log(`Failed request ids:`);
+	console.log(requestErrorIds.join('\n'));
+	process.exit(1);
+}
