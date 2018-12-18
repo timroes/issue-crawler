@@ -178,6 +178,7 @@ async function main() {
 				} else {
 					// Since the GitHub API seem to fail very often, we just log out failures,
 					// but continue with the next page.
+					console.log(error);
 					if (error.headers && error.headers['x-github-request-id']) {
 						requestErrorIds.push(error.headers['x-github-request-id']);
 					}
