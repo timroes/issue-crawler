@@ -137,59 +137,63 @@ async function loadCacheForRepo(owner, repo) {
 	}, {});
 }
 
-const requestErrorIds = [];
-let errorCount = 0;
+async function main() {
+	const requestErrorIds = [];
+	let errorCount = 0;
 
-await Promise.all(config.repos.map(async (repository) => {
-	console.log(`Processing repository ${repository}`);
-	const [ owner, repo ] = repository.split('/');
+	await Promise.all(config.repos.map(async (repository) => {
+		console.log(`Processing repository ${repository}`);
+		const [ owner, repo ] = repository.split('/');
 
-	const cache = await loadCacheForRepo(owner, repo);
+		const cache = await loadCacheForRepo(owner, repo);
 
-	let page = 0;
-	let shouldCheckNextPage = true;
-	while(shouldCheckNextPage) {
-		page++;
-		console.log(`Requesting issues page ${page} for ${repository} (using etag ${cache[page]})`)
-		try {
-			const headers = cache[page] ? { 'If-None-Match': cache[page] } : {};
-			const response = await octokit.issues.getForRepo({
-				owner,
-				repo,
-				page,
-				per_page: 100,
-				state: 'all',
-				sort: 'created',
-				direction: 'asc',
-				headers: headers
-			});
-			console.log('Remaining request limit: %s/%s',
-				response.meta['x-ratelimit-remaining'],
-				response.meta['x-ratelimit-limit']
-			);
-			await processGitHubIssues(owner, repo, response, page);
-			shouldCheckNextPage = octokit.hasNextPage(response);
-		} catch (error) {
-			if (error.name === 'HttpError' && error.code === 304) {
-				// Ignore not modified responses and continue with the next page.
-				console.log('Page was not modified. Continue with next page.');
-				continue;
-			} else {
-				// Since the GitHub API seem to fail very often, we just log out failures,
-				// but continue with the next page.
-				if (error.headers && error.headers['x-github-request-id']) {
-					requestErrorIds.push(error.headers['x-github-request-id']);
+		let page = 0;
+		let shouldCheckNextPage = true;
+		while(shouldCheckNextPage) {
+			page++;
+			console.log(`Requesting issues page ${page} for ${repository} (using etag ${cache[page]})`)
+			try {
+				const headers = cache[page] ? { 'If-None-Match': cache[page] } : {};
+				const response = await octokit.issues.getForRepo({
+					owner,
+					repo,
+					page,
+					per_page: 100,
+					state: 'all',
+					sort: 'created',
+					direction: 'asc',
+					headers: headers
+				});
+				console.log('Remaining request limit: %s/%s',
+					response.meta['x-ratelimit-remaining'],
+					response.meta['x-ratelimit-limit']
+				);
+				await processGitHubIssues(owner, repo, response, page);
+				shouldCheckNextPage = octokit.hasNextPage(response);
+			} catch (error) {
+				if (error.name === 'HttpError' && error.code === 304) {
+					// Ignore not modified responses and continue with the next page.
+					console.log('Page was not modified. Continue with next page.');
+					continue;
+				} else {
+					// Since the GitHub API seem to fail very often, we just log out failures,
+					// but continue with the next page.
+					if (error.headers && error.headers['x-github-request-id']) {
+						requestErrorIds.push(error.headers['x-github-request-id']);
+					}
+					errorCount++;
 				}
-				errorCount++;
 			}
 		}
-	}
-}));
+	}));
 
-if (errorCount > 0) {
-	console.log('------ ERROR REPORT -------');
-	console.log(`Failed requests: ${errorCount}`);
-	console.log(`Failed request ids:`);
-	console.log(requestErrorIds.join('\n'));
-	process.exit(1);
+	if (errorCount > 0) {
+		console.log('------ ERROR REPORT -------');
+		console.log(`Failed requests: ${errorCount}`);
+		console.log(`Failed request ids:`);
+		console.log(requestErrorIds.join('\n'));
+		process.exit(1);
+	}
 }
+
+main();
