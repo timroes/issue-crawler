@@ -1,6 +1,7 @@
 const repos = [
 	'elastic/kibana',
 	'elastic/eui',
+	'elastic/elastic-charts',
 ];
 
 if (!process.env.GITHUB_OAUTH_TOKEN || !process.env.ES_HOST || !process.env.ES_AUTH) {
