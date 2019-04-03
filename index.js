@@ -177,6 +177,7 @@ async function main() {
 				if (error.name === 'HttpError' && error.code === 304) {
 					// Ignore not modified responses and continue with the next page.
 					console.log('Page was not modified. Continue with next page.');
+					page++;
 					continue;
 				} else {
 					// Since the GitHub API seem to fail very often, we just log out failures,
