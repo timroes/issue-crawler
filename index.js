@@ -142,6 +142,7 @@ async function loadCacheForRepo(owner, repo) {
 async function main() {
 	const requestErrorIds = [];
 	let errorCount = 0;
+	let failJob = false;
 
 	await Promise.all(config.repos.map(async (repository) => {
 		console.log(`Processing repository ${repository}`);
@@ -191,6 +192,9 @@ async function main() {
 					retries++;
 					console.log(`Retrying the same page (${repository}#${page}) again. Retry ${retries}/${MAX_RETRIES_PER_PAGE}`);
 					continue;
+				} else {
+					// Only fail the job if one page failed all three retries
+					failJob = true;
 				}
 			}
 			page++;
@@ -203,6 +207,8 @@ async function main() {
 		console.log(`Failed requests: ${errorCount}`);
 		console.log(`Failed request ids:`);
 		console.log(requestErrorIds.join('\n'));
+	}
+	if (failJob) {
 		process.exit(1);
 	}
 }
