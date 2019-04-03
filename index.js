@@ -5,7 +5,7 @@ const elasticsearch = require('elasticsearch');
 const moment = require('moment');
 
 const CACHE_INDEX = 'cache';
-const MAX_RETRIES_PER_PAGE = 3;
+const MAX_RETRIES_PER_PAGE = 2;
 
 const client = new elasticsearch.Client(config.elasticsearch);
 
@@ -173,11 +173,14 @@ async function main() {
 				);
 				await processGitHubIssues(owner, repo, response, page);
 				shouldCheckNextPage = octokit.hasNextPage(response);
+				page++;
+				retries = 0;
 			} catch (error) {
 				if (error.name === 'HttpError' && error.code === 304) {
 					// Ignore not modified responses and continue with the next page.
 					console.log('Page was not modified. Continue with next page.');
 					page++;
+					retries = 0;
 					continue;
 				} else {
 					// Since the GitHub API seem to fail very often, we just log out failures,
@@ -189,17 +192,15 @@ async function main() {
 					errorCount++;
 				}
 				// If we haven't reached the maximum number of retries let's retry this page once more
-				if (retries < MAX_RETRIES_PER_PAGE - 1) {
+				if (retries < MAX_RETRIES_PER_PAGE) {
 					retries++;
-					console.log(`Retrying the same page (${repository}#${page}) again. Retry ${retries}/${MAX_RETRIES_PER_PAGE}`);
+					console.log(`Retrying the same page (${repository}#${page}) again. Retry ${retries} of ${MAX_RETRIES_PER_PAGE}`);
 					continue;
 				} else {
 					// Only fail the job if one page failed all three retries
 					failJob = true;
 				}
 			}
-			page++;
-			retries = 0;
 		}
 	}));
 
