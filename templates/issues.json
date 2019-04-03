@@ -9,6 +9,9 @@
         "id": {
           "type": "keyword"
         },
+        "last_crawled_at": {
+          "type": "date"
+        },
         "owner": {
           "type": "keyword"
         },

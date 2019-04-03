@@ -37,6 +37,7 @@ function convertIssue(owner, repo, raw) {
 			null;
 	return {
 		id: raw.id,
+		last_crawled_at: Date.now(),
 		owner: owner,
 		repo: repo,
 		state: raw.state,
