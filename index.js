@@ -5,6 +5,7 @@ const elasticsearch = require('elasticsearch');
 const moment = require('moment');
 
 const CACHE_INDEX = 'cache';
+const MAX_RETRIES_PER_PAGE = 3;
 
 const client = new elasticsearch.Client(config.elasticsearch);
 
@@ -147,10 +148,10 @@ async function main() {
 
 		const cache = await loadCacheForRepo(owner, repo);
 
-		let page = 0;
+		let page = 1;
+		let retries = 0;
 		let shouldCheckNextPage = true;
 		while(shouldCheckNextPage) {
-			page++;
 			console.log(`Requesting issues page ${page} for ${repository} (using etag ${cache[page]})`)
 			try {
 				const headers = cache[page] ? { 'If-None-Match': cache[page] } : {};
@@ -184,7 +185,15 @@ async function main() {
 					}
 					errorCount++;
 				}
+				// If we haven't reached the maximum number of retries let's retry this page once more
+				if (retries < MAX_RETRIES_PER_PAGE - 1) {
+					retries++;
+					console.log(`Retrying the same page (${repository}#${page}) again. Retry ${retries}/${MAX_RETRIES_PER_PAGE}`);
+					continue;
+				}
 			}
+			page++;
+			retries = 0;
 		}
 	}));
 
