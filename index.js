@@ -187,7 +187,7 @@ async function main() {
 					// but continue with the next page.
 					console.log(error);
 					if (error.headers && error.headers['x-github-request-id']) {
-						requestErrorIds.push(error.headers['x-github-request-id']);
+						requestErrorIds.push(`${error.headers['x-github-request-id']} [HTTP Status: ${error.code}]`);
 					}
 					errorCount++;
 				}
