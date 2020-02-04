@@ -10,8 +10,8 @@
   "author": "Tim Roes <mail@timroes.de>",
   "license": "Apache-2.0",
   "dependencies": {
-    "@octokit/rest": "^14.0.9",
-    "elasticsearch": "^14.1.0",
-    "moment": "^2.20.1"
+    "@octokit/rest": "^16.43.1",
+    "elasticsearch": "^16.6.0",
+    "moment": "^2.24.0"
   }
 }
