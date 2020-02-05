@@ -100,7 +100,7 @@ function getCacheKeyUpdate(owner, repo, page, key) {
  * Elasticsearch and update the cache key, we got from GitHub.
  */
 async function processGitHubIssues(owner, repo, response, page) {
-	console.log(`Found ${response.data.length} issues`);
+	console.log(`[${owner}/${repo}#${page}] Found ${response.data.length} issues`);
 	if (response.data.length > 0) {
 		const issues = response.data.map(issue => convertIssue(owner, repo, issue));
 		const bulkIssues = getIssueBulkUpdates(`issues-${owner}-${repo}`, issues);
