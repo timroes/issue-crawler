@@ -106,7 +106,7 @@ async function processGitHubIssues(owner, repo, response, page) {
 		const bulkIssues = getIssueBulkUpdates(`issues-${owner}-${repo}`, issues);
 		const updateCacheKey = getCacheKeyUpdate(owner, repo, page, response.headers.etag);
 		const body = [...bulkIssues, ...updateCacheKey];
-		console.log(`Writing issues and new cache key "${response.headers.etag}" to Elasticsearch`);
+		console.log(`[${owner}/${repo}#${page}] Writing issues and new cache key "${response.headers.etag}" to Elasticsearch`);
 		await client.bulk({ body });
 	}
 }
@@ -154,7 +154,7 @@ async function main() {
 		let page = 1;
 		let shouldCheckNextPage = true;
 		while(shouldCheckNextPage) {
-			console.log(`Requesting issues page ${page} for ${repository} (using etag ${cache[page]})`)
+			console.log(`[${owner}/${repo}#${page}] Requesting issues using etag: ${cache[page]}`);
 			try {
 				const headers = cache[page] ? { 'If-None-Match': cache[page] } : {};
 				const response = await octokit.issues.listForRepo({
@@ -167,7 +167,7 @@ async function main() {
 					direction: 'asc',
 					headers: headers
 				});
-				console.log('Remaining request limit: %s/%s',
+				console.log(`[${owner}/${repo}#${page}] Remaining request limit: %s/%s`,
 					response.headers['x-ratelimit-remaining'],
 					response.headers['x-ratelimit-limit']
 				);
@@ -177,13 +177,13 @@ async function main() {
 			} catch (error) {
 				if (error.name === 'HttpError' && error.code === 304) {
 					// Ignore not modified responses and continue with the next page.
-					console.log('Page was not modified. Continue with next page.');
+					console.log(`[${owner}/${repo}#${page}] Page was not modified. Continue with next page.`);
 					page++;
 					continue;
 				}
 
 				if(error.request && error.request.request.retryCount) {
-					console.error(`Failed request for page (${repository}#${page}) after ${error.request.request.retryCount} retries.`);
+					console.error(`[${owner}/${repo}#${page}] Failed request for page after ${error.request.request.retryCount} retries.`);
 				}
 				failJob = true;
 			}
