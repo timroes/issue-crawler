@@ -1,15 +1,18 @@
 const config = require('./config.js');
 
-const octokit = require('@octokit/rest')();
+const { Octokit } = require('@octokit/rest');
+const { retry } = require('@octokit/plugin-retry');
 const elasticsearch = require('elasticsearch');
 const moment = require('moment');
 
 const CACHE_INDEX = 'cache';
-const MAX_RETRIES_PER_PAGE = 2;
 
 const client = new elasticsearch.Client(config.elasticsearch);
 
-octokit.authenticate(config.githubAuth);
+const RetryOctokit = Octokit.plugin(retry);
+const octokit = new RetryOctokit({
+	auth: config.githubAuth,
+});
 
 /**
  * Enhace a passed in date, into an object that contains further useful
@@ -101,7 +104,7 @@ async function processGitHubIssues(owner, repo, response, page) {
 	if (response.data.length > 0) {
 		const issues = response.data.map(issue => convertIssue(owner, repo, issue));
 		const bulkIssues = getIssueBulkUpdates(`issues-${owner}-${repo}`, issues);
-		const updateCacheKey = getCacheKeyUpdate(owner, repo, page, response.meta.etag);
+		const updateCacheKey = getCacheKeyUpdate(owner, repo, page, response.headers.etag);
 		const body = [...bulkIssues, ...updateCacheKey];
 		console.log('Writing issues and new cache key to Elasticsearch');
 		await client.bulk({ body });
@@ -140,8 +143,6 @@ async function loadCacheForRepo(owner, repo) {
 }
 
 async function main() {
-	const requestErrorIds = [];
-	let errorCount = 0;
 	let failJob = false;
 
 	await Promise.all(config.repos.map(async (repository) => {
@@ -151,13 +152,12 @@ async function main() {
 		const cache = await loadCacheForRepo(owner, repo);
 
 		let page = 1;
-		let retries = 0;
 		let shouldCheckNextPage = true;
 		while(shouldCheckNextPage) {
 			console.log(`Requesting issues page ${page} for ${repository} (using etag ${cache[page]})`)
 			try {
 				const headers = cache[page] ? { 'If-None-Match': cache[page] } : {};
-				const response = await octokit.issues.getForRepo({
+				const response = await octokit.issues.listForRepo({
 					owner,
 					repo,
 					page,
@@ -168,48 +168,28 @@ async function main() {
 					headers: headers
 				});
 				console.log('Remaining request limit: %s/%s',
-					response.meta['x-ratelimit-remaining'],
-					response.meta['x-ratelimit-limit']
+					response.headers['x-ratelimit-remaining'],
+					response.headers['x-ratelimit-limit']
 				);
 				await processGitHubIssues(owner, repo, response, page);
-				shouldCheckNextPage = octokit.hasNextPage(response);
+				shouldCheckNextPage = response.headers.link.includes('rel="next"');
 				page++;
-				retries = 0;
 			} catch (error) {
 				if (error.name === 'HttpError' && error.code === 304) {
 					// Ignore not modified responses and continue with the next page.
 					console.log('Page was not modified. Continue with next page.');
 					page++;
-					retries = 0;
 					continue;
-				} else {
-					// Since the GitHub API seem to fail very often, we just log out failures,
-					// but continue with the next page.
-					console.log(error);
-					if (error.headers && error.headers['x-github-request-id']) {
-						requestErrorIds.push(`${error.headers['x-github-request-id']} [HTTP Status: ${error.code}]`);
-					}
-					errorCount++;
 				}
-				// If we haven't reached the maximum number of retries let's retry this page once more
-				if (retries < MAX_RETRIES_PER_PAGE) {
-					retries++;
-					console.log(`Retrying the same page (${repository}#${page}) again. Retry ${retries} of ${MAX_RETRIES_PER_PAGE}`);
-					continue;
-				} else {
-					// Only fail the job if one page failed all three retries
-					failJob = true;
+
+				if(error.request && error.request.request.retryCount) {
+					console.error(`Failed request for page (${repository}#${page}) after ${error.request.request.retryCount} retries.`);
 				}
+				failJob = true;
 			}
 		}
 	}));
 
-	if (errorCount > 0) {
-		console.log('------ ERROR REPORT -------');
-		console.log(`Failed requests: ${errorCount}`);
-		console.log(`Failed request ids:`);
-		console.log(requestErrorIds.join('\n'));
-	}
 	if (failJob) {
 		process.exit(1);
 	}
