@@ -106,7 +106,7 @@ async function processGitHubIssues(owner, repo, response, page) {
 		const bulkIssues = getIssueBulkUpdates(`issues-${owner}-${repo}`, issues);
 		const updateCacheKey = getCacheKeyUpdate(owner, repo, page, response.headers.etag);
 		const body = [...bulkIssues, ...updateCacheKey];
-		console.log('Writing issues and new cache key to Elasticsearch');
+		console.log(`Writing issues and new cache key "${response.headers.etag}" to Elasticsearch`);
 		await client.bulk({ body });
 	}
 }
