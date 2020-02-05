@@ -175,7 +175,7 @@ async function main() {
 				shouldCheckNextPage = response.headers.link.includes('rel="next"');
 				page++;
 			} catch (error) {
-				if (error.name === 'HttpError' && error.code === 304) {
+				if (error.name === 'HttpError' && error.status === 304) {
 					// Ignore not modified responses and continue with the next page.
 					console.log(`[${owner}/${repo}#${page}] Page was not modified. Continue with next page.`);
 					page++;
