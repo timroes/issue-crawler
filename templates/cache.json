@@ -4,22 +4,20 @@
     "number_of_shards": 1
   },
   "mappings": {
-    "doc": {
-      "properties": {
-        "owner": {
-          "type": "keyword"
-        },
-        "repo": {
-          "type": "keyword"
-        },
-        "key": {
-          "type": "keyword",
-          "index": false
-        },
-        "page": {
-          "type": "long",
-          "index": false
-        }
+    "properties": {
+      "owner": {
+        "type": "keyword"
+      },
+      "repo": {
+        "type": "keyword"
+      },
+      "key": {
+        "type": "keyword",
+        "index": false
+      },
+      "page": {
+        "type": "long",
+        "index": false
       }
     }
   }
