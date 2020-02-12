@@ -11,6 +11,7 @@ const client = new elasticsearch.Client(config.elasticsearch);
 
 const RetryOctokit = Octokit.plugin(retry);
 const octokit = new RetryOctokit({
+	previews: ['squirrel-girl-preview'],
 	auth: config.githubAuth,
 });
 
@@ -66,6 +67,8 @@ function convertIssue(owner, repo, raw) {
 			hooray: raw.reactions.hooray,
 			confused: raw.reactions.confused,
 			heart: raw.reactions.hearts,
+			rocket: raw.reactions.rocket,
+			eyes: raw.reactions.eyes,
 		},
 		time_to_fix: time_to_fix,
 	};
@@ -77,7 +80,7 @@ function convertIssue(owner, repo, raw) {
  */
 function getIssueBulkUpdates(index, issues) {
 	return [].concat(...issues.map(issue => [
-		{ index: { _index: index, _type: 'doc', _id: issue.id }},
+		{ index: { _index: index, _type: '_doc', _id: issue.id }},
 		issue
 	]));
 }
@@ -89,7 +92,7 @@ function getIssueBulkUpdates(index, issues) {
 function getCacheKeyUpdate(owner, repo, page, key) {
 	const id = `${owner}_${repo}_${page}`
 	return [
-		{ index: { _index: CACHE_INDEX, _type: 'doc', _id: id }},
+		{ index: { _index: CACHE_INDEX, _type: '_doc', _id: id }},
 		{ owner, repo, page, key }
 	];
 }
