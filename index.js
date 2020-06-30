@@ -102,14 +102,14 @@ function getCacheKeyUpdate(owner, repo, page, key) {
  * This will convert all issues to the desired format, store them into
  * Elasticsearch and update the cache key, we got from GitHub.
  */
-async function processGitHubIssues(owner, repo, response, page) {
-	console.log(`[${owner}/${repo}#${page}] Found ${response.data.length} issues`);
+async function processGitHubIssues(owner, repo, response, page, indexName, logDisplayName) {
+	console.log(`[${logDisplayName}#${page}] Found ${response.data.length} issues`);
 	if (response.data.length > 0) {
 		const issues = response.data.map(issue => convertIssue(owner, repo, issue));
-		const bulkIssues = getIssueBulkUpdates(`issues-${owner}-${repo}`, issues);
+		const bulkIssues = getIssueBulkUpdates(indexName, issues);
 		const updateCacheKey = getCacheKeyUpdate(owner, repo, page, response.headers.etag);
 		const body = [...bulkIssues, ...updateCacheKey];
-		console.log(`[${owner}/${repo}#${page}] Writing issues and new cache key "${response.headers.etag}" to Elasticsearch`);
+		console.log(`[${logDisplayName}#${page}] Writing issues and new cache key "${response.headers.etag}" to Elasticsearch`);
 		await client.bulk({ body });
 	}
 }
@@ -148,8 +148,8 @@ async function loadCacheForRepo(owner, repo) {
 async function main() {
 	let failJob = false;
 
-	await Promise.all(config.repos.map(async (repository) => {
-		console.log(`Processing repository ${repository}`);
+	async function handleRepository(repository, displayName = repository, isPrivate = false) {
+		console.log(`Processing repository ${displayName}`);
 		const [ owner, repo ] = repository.split('/');
 
 		const cache = await loadCacheForRepo(owner, repo);
@@ -157,7 +157,7 @@ async function main() {
 		let page = 1;
 		let shouldCheckNextPage = true;
 		while(shouldCheckNextPage) {
-			console.log(`[${owner}/${repo}#${page}] Requesting issues using etag: ${cache[page]}`);
+			console.log(`[${displayName}#${page}] Requesting issues using etag: ${cache[page]}`);
 			try {
 				const headers = cache[page] ? { 'If-None-Match': cache[page] } : {};
 				const response = await octokit.issues.listForRepo({
@@ -170,28 +170,34 @@ async function main() {
 					direction: 'asc',
 					headers: headers
 				});
-				console.log(`[${owner}/${repo}#${page}] Remaining request limit: %s/%s`,
+				console.log(`[${displayName}#${page}] Remaining request limit: %s/%s`,
 					response.headers['x-ratelimit-remaining'],
 					response.headers['x-ratelimit-limit']
 				);
-				await processGitHubIssues(owner, repo, response, page);
+				const indexName = isPrivate ? `private-issues-${owner}-${repo}` : `issues-${owner}-${repo}`;
+				await processGitHubIssues(owner, repo, response, page, indexName, displayName);
 				shouldCheckNextPage = response.headers.link.includes('rel="next"');
 				page++;
 			} catch (error) {
 				if (error.name === 'HttpError' && error.status === 304) {
 					// Ignore not modified responses and continue with the next page.
-					console.log(`[${owner}/${repo}#${page}] Page was not modified. Continue with next page.`);
+					console.log(`[${displayName}#${page}] Page was not modified. Continue with next page.`);
 					page++;
 					continue;
 				}
 
 				if(error.request && error.request.request.retryCount) {
-					console.error(`[${owner}/${repo}#${page}] Failed request for page after ${error.request.request.retryCount} retries.`);
+					console.error(`[${displayName}#${page}] Failed request for page after ${error.request.request.retryCount} retries.`);
 				}
 				failJob = true;
 			}
 		}
-	}));
+	}
+
+	await Promise.all([
+		...config.repos.map(rep => handleRepository(rep)),
+		...(config.privateRepos.length > 0 ? config.privateRepos.map((rep, index) => handleRepository(rep, `PRIVATE_REPOS[${index}]`, true)) : [])
+	]);
 
 	if (failJob) {
 		process.exit(1);

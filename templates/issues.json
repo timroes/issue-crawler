@@ -1,5 +1,5 @@
 {
-  "index_patterns": ["issues-*"],
+  "index_patterns": ["issues-*", "private-issues-*"],
   "settings": {
     "number_of_shards": 1
   },
