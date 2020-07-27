@@ -23,3 +23,5 @@ jobs:
     # Runs a single command using the runners shell
     - name: Trigger TravisCI
       run: ./trigger_travis.sh
+      env:
+        TRAVIS_TOKEN: ${{ secrets.TRAVIS_TOKEN }}
