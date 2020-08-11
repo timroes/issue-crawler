@@ -146,8 +146,6 @@ async function loadCacheForRepo(owner, repo) {
 }
 
 async function main() {
-	let failJob = false;
-
 	async function handleRepository(repository, displayName = repository, isPrivate = false) {
 		console.log(`Processing repository ${displayName}`);
 		const [ owner, repo ] = repository.split('/');
@@ -189,17 +187,17 @@ async function main() {
 				if(error.request && error.request.request.retryCount) {
 					console.error(`[${displayName}#${page}] Failed request for page after ${error.request.request.retryCount} retries.`);
 				}
-				failJob = true;
+				throw error;
 			}
 		}
 	}
 
-	await Promise.all([
+	const results = await Promise.allSettled([
 		...config.repos.map(rep => handleRepository(rep)),
 		...(config.privateRepos.length > 0 ? config.privateRepos.map((rep, index) => handleRepository(rep, `PRIVATE_REPOS[${index}]`, true)) : [])
 	]);
 
-	if (failJob) {
+	if (results.some(({ status }) => status === 'rejected')) {
 		process.exit(1);
 	}
 }
