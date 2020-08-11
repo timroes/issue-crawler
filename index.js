@@ -174,7 +174,7 @@ async function main() {
 				);
 				const indexName = isPrivate ? `private-issues-${owner}-${repo}` : `issues-${owner}-${repo}`;
 				await processGitHubIssues(owner, repo, response, page, indexName, displayName);
-				shouldCheckNextPage = response.headers.link.includes('rel="next"');
+				shouldCheckNextPage = response.headers.link && response.headers.link.includes('rel="next"');
 				page++;
 			} catch (error) {
 				if (error.name === 'HttpError' && error.status === 304) {
