@@ -186,6 +186,8 @@ async function main() {
 
 				if(error.request && error.request.request.retryCount) {
 					console.error(`[${displayName}#${page}] Failed request for page after ${error.request.request.retryCount} retries.`);
+				} else {
+					console.error(error);
 				}
 				throw error;
 			}
