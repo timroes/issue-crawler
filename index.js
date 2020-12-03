@@ -17,13 +17,16 @@ const octokit = new RetryOctokit({
 	request: { retries: 2 },
 	throttle: {
 		onRateLimit: (retryAfter, options, octokit) => {
-			octokit.log.warn(`Request quota exhausted.`)
+			octokit.log.warn(`Request quota exhausted.`);
 		},
 		onAbuseLimit: (retryAfter, options, octokit) => {
-			octokit.log.warn(`Abuse limit triggered, retrying after Retry-After ...`);
+			octokit.log.warn(`Abuse limit triggered, retrying after ${retryAfter}s ...`);
 			return true;
 		}
-	}
+	},
+	retry: {
+		doNotRetry: ['429'],
+	},
 });
 
 /**
