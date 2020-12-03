@@ -2,6 +2,7 @@ const config = require('./config.js');
 
 const { Octokit } = require('@octokit/rest');
 const { retry } = require('@octokit/plugin-retry');
+const { throttling } = require('@octokit/plugin-throttling');
 const elasticsearch = require('elasticsearch');
 const moment = require('moment');
 
@@ -9,11 +10,20 @@ const CACHE_INDEX = 'cache';
 
 const client = new elasticsearch.Client(config.elasticsearch);
 
-const RetryOctokit = Octokit.plugin(retry);
+const RetryOctokit = Octokit.plugin(retry, throttling);
 const octokit = new RetryOctokit({
 	previews: ['squirrel-girl-preview'],
 	auth: config.githubAuth,
-	request: { retries: 2 }
+	request: { retries: 2 },
+	throttle: {
+		onRateLimit: (retryAfter, options, octokit) => {
+			octokit.log.warn(`Request quota exhausted.`)
+		},
+		onAbuseLimit: (retryAfter, options, octokit) => {
+			octokit.log.warn(`Abuse limit triggered, retrying after Retry-After ...`);
+			return true;
+		}
+	}
 });
 
 /**
