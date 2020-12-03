@@ -13,6 +13,7 @@ const RetryOctokit = Octokit.plugin(retry);
 const octokit = new RetryOctokit({
 	previews: ['squirrel-girl-preview'],
 	auth: config.githubAuth,
+	request: { retries: 2 }
 });
 
 /**
@@ -186,6 +187,7 @@ async function main() {
 
 				if(error.request && error.request.request.retryCount) {
 					console.error(`[${displayName}#${page}] Failed request for page after ${error.request.request.retryCount} retries.`);
+					console.error(`[${displayName}#${page}] ${error.toString()}`);
 				} else {
 					console.error(error);
 				}
